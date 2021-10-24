@@ -1603,9 +1603,7 @@ CLASS zcl_excel_reader_2007 IMPLEMENTATION.
 *          adding comments to explain what we are trying to achieve
 *--------------------------------------------------------------------*
     DATA: lo_node_font TYPE REF TO if_ixml_element,
-          lo_node2     TYPE REF TO if_ixml_element,
-          lo_font      TYPE REF TO zcl_excel_style_font,
-          ls_color     TYPE t_color.
+          lo_font      TYPE REF TO zcl_excel_style_font.
 
 *--------------------------------------------------------------------*
 * We need a table of used fonts to build up our styles
@@ -1622,91 +1620,7 @@ CLASS zcl_excel_reader_2007 IMPLEMENTATION.
     lo_node_font ?= ip_xml->find_from_name( 'font' ).
     WHILE lo_node_font IS BOUND.
 
-      CREATE OBJECT lo_font.
-*--------------------------------------------------------------------*
-*   Bold
-*--------------------------------------------------------------------*
-      IF lo_node_font->find_from_name( 'b' ) IS BOUND.
-        lo_font->bold = abap_true.
-      ENDIF.
-
-*--------------------------------------------------------------------*
-*   Italic
-*--------------------------------------------------------------------*
-      IF lo_node_font->find_from_name( 'i' ) IS BOUND.
-        lo_font->italic = abap_true.
-      ENDIF.
-
-*--------------------------------------------------------------------*
-*   Underline
-*--------------------------------------------------------------------*
-      lo_node2 = lo_node_font->find_from_name( 'u' ).
-      IF lo_node2 IS BOUND.
-        lo_font->underline      = abap_true.
-        lo_font->underline_mode = lo_node2->get_attribute( 'val' ).
-      ENDIF.
-
-*--------------------------------------------------------------------*
-*   StrikeThrough
-*--------------------------------------------------------------------*
-      IF lo_node_font->find_from_name( 'strike' ) IS BOUND.
-        lo_font->strikethrough = abap_true.
-      ENDIF.
-
-*--------------------------------------------------------------------*
-*   Fontsize
-*--------------------------------------------------------------------*
-      lo_node2 = lo_node_font->find_from_name( 'sz' ).
-      IF lo_node2 IS BOUND.
-        lo_font->size = lo_node2->get_attribute( 'val' ).
-      ENDIF.
-
-*--------------------------------------------------------------------*
-*   Fontname
-*--------------------------------------------------------------------*
-      lo_node2 = lo_node_font->find_from_name( 'name' ).
-      IF lo_node2 IS BOUND.
-        lo_font->name = lo_node2->get_attribute( 'val' ).
-      ENDIF.
-
-*--------------------------------------------------------------------*
-*   Fontfamily
-*--------------------------------------------------------------------*
-      lo_node2 = lo_node_font->find_from_name( 'family' ).
-      IF lo_node2 IS BOUND.
-        lo_font->family = lo_node2->get_attribute( 'val' ).
-      ENDIF.
-
-*--------------------------------------------------------------------*
-*   Fontscheme
-*--------------------------------------------------------------------*
-      lo_node2 = lo_node_font->find_from_name( 'scheme' ).
-      IF lo_node2 IS BOUND.
-        lo_font->scheme = lo_node2->get_attribute( 'val' ).
-      ELSE.
-        CLEAR lo_font->scheme.
-      ENDIF.
-
-*--------------------------------------------------------------------*
-*   Fontcolor
-*--------------------------------------------------------------------*
-      lo_node2 = lo_node_font->find_from_name( 'color' ).
-      IF lo_node2 IS BOUND.
-        fill_struct_from_attributes( EXPORTING
-                                       ip_element   =  lo_node2
-                                     CHANGING
-                                       cp_structure = ls_color ).
-        lo_font->color-rgb = ls_color-rgb.
-        IF ls_color-indexed IS NOT INITIAL.
-          lo_font->color-indexed = ls_color-indexed.
-        ENDIF.
-
-        IF ls_color-theme IS NOT INITIAL.
-          lo_font->color-theme = ls_color-theme.
-        ENDIF.
-        lo_font->color-tint = ls_color-tint.
-      ENDIF.
-
+      lo_font = load_style_font( lo_node_font ).
       INSERT lo_font INTO TABLE ep_fonts.
 
       lo_node_font ?= lo_node_font->get_next( ).
@@ -3610,6 +3524,7 @@ CLASS zcl_excel_reader_2007 IMPLEMENTATION.
 
 
   ENDMETHOD.
+
 
   METHOD load_worksheet_ignored_errors.
 
